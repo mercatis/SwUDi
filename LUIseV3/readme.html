@@ -1,0 +1,85 @@
+<!--
+  ~ Copyright 2011 mercatis technologies AG
+  ~
+  ~    Licensed under the Apache License, Version 2.0 (the "License");
+  ~    you may not use this file except in compliance with the License.
+  ~    You may obtain a copy of the License at
+  ~
+  ~        http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~    Unless required by applicable law or agreed to in writing, software
+  ~    distributed under the License is distributed on an "AS IS" BASIS,
+  ~    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~    See the License for the specific language governing permissions and
+  ~    limitations under the License.
+  -->
+
+<html>
+
+<body>
+<h1>LUIseV3 for SwUDi</h1>
+
+    A <a href="http://www.wallbraun-electronics.de/produkte/lcdusbinterfacev301/index.html">LUIseV3</a> implementation for SwUDi.
+
+    It uses <a href="http://kenai.com/projects/javaftd2xx/pages/Home">JavaFTD2XX</a> to access the device.
+    Unfortunately I do not know a maven repository, so you have to upload it manually to your repository:
+
+<pre>
+mvn install:install-file -Dfile=JavaFTD2XX-0.2.6.jar -DgroupId=com.ftdi.FTD2XX -DartifactId=FTD2XX -Dversion=0.2.6
+-Dpackaging=jar
+</pre>
+
+    <h2>Hints for using Linux:</h2>
+
+    <ul>
+        <li>ftd2xx needed rw access to the usb device, you will get an jvm crash, is you do not have write access:
+
+<pre>
+libusb couldn't open USB device /dev/bus/usb/002/019: Permission denied.
+libusb requires write access to USB device nodes.
+#
+# A fatal error has been detected by the Java Runtime Environment:
+#
+#  SIGSEGV (0xb) at pc=0x00007fc320c7435d, pid=9995, tid=140476202522368
+#
+# JRE version: 6.0_26-b03
+# Java VM: Java HotSpot(TM) 64-Bit Server VM (20.1-b02 mixed mode linux-amd64 compressed oops)
+# Problematic frame:
+# C  [ftd2xx4932383651674324898.so+0xa35d]  long+0x1f
+#
+# An error report file with more information is saved as:
+# hs_err_pid9995.log
+#
+# If you would like to submit a bug report, please visit:
+#   http://java.sun.com/webapps/bugreport/crash.jsp
+# The crash happened outside the Java Virtual Machine in native code.
+# See problematic frame for where to report the bug.
+#
+</pre>
+            -> either fix your udev scripts, or just give yourself write access: "chmod 666 /dev/bus/usb/002/019"
+
+        </li>
+
+        <li>ftd2xx did not find a device, eg:
+
+<pre>
+05.12.2011 13:33:09 com.ftdi.FTDevice getDevices
+INFO: Found devs: 0 (All:1)
+no device found
+</pre>
+
+            the problem maybe is that linux loads some modules, if you plugin a ftdi-device -> ftdi_sio, usbserial.
+            You have to remove them when using ftd2xx -> "rmmod ftdi_sio usbserial" as root
+
+        </li>
+
+        <li>INVALID_HANDLE : In my linux env in 2 out of 5 tries i get
+        <pre>
+Exception in thread "main" com.ftdi.FTD2XXException: D2XX error, ftStatus:INVALID_HANDLE
+        </pre>
+            I'm not sure why, just restart the application...
+        </li>
+        <ul>
+
+</body>
+</html>
