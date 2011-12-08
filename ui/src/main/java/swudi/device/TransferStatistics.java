@@ -22,7 +22,6 @@ import java.util.Date;
 import java.util.List;
 
 /**
- * <!--
  * Created: 03.12.11   by: Armin Haaf
  * <p/>
  *

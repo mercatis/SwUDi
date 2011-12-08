@@ -20,7 +20,6 @@ import java.awt.Point;
 import java.awt.image.BufferedImage;
 
 /**
- * <!--
  * Created: 02.12.11   by: Armin Haaf
  * <p/>
  *

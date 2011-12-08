@@ -30,7 +30,6 @@ import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
 
 /**
- * <!--
  * Created: 02.12.11   by: Armin Haaf
  * <p/>
  *

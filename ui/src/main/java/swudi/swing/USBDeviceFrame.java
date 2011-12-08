@@ -19,7 +19,6 @@ package swudi.swing;
 import swudi.device.USBDisplay;
 
 /**
- * <!--
  * Created: 05.12.11   by: Armin Haaf
  * <p/>
  *

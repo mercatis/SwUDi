@@ -21,7 +21,6 @@ import java.awt.image.BufferedImage;
 import java.util.List;
 
 /**
- * <!--
  * Created: 04.12.11   by: Armin Haaf
  * <p/>
  *

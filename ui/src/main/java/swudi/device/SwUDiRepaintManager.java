@@ -29,7 +29,6 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * <!--
  * Created: 07.12.11   by: Armin Haaf
  * <p/>
  *

@@ -40,7 +40,6 @@ import java.awt.BorderLayout;
 import java.awt.image.BufferedImage;
 
 /**
- * <!--
  * Created: 04.12.11   by: Armin Haaf
  * <p/>
  *

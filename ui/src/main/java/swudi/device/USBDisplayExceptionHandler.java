@@ -17,7 +17,6 @@
 package swudi.device;
 
 /**
- * <!--
  * Created: 05.12.11   by: Armin Haaf
  * <p/>
  *

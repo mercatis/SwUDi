@@ -24,7 +24,6 @@ import javax.swing.plaf.ColorUIResource;
 import javax.swing.plaf.metal.DefaultMetalTheme;
 
 /**
- * <!--
  * Created: 02.12.11   by: Armin Haaf
  * <p/>
  *

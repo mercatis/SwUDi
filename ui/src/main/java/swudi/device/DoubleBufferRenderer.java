@@ -27,7 +27,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
- * <!--
  * Created: 04.12.11   by: Armin Haaf
  * <p/>
  *

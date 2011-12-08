@@ -60,7 +60,6 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
 /**
- * <!--
  * Created: 04.12.11   by: Armin Haaf
  * <p/>
  *

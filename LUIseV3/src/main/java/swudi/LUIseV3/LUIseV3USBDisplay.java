@@ -30,7 +30,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * <!--
  * Created: 02.12.11   by: Armin Haaf
  * <p/>
  *

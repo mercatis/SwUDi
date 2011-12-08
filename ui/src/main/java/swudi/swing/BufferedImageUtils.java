@@ -20,7 +20,6 @@ import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferByte;
 
 /**
- * <!--
  * Created: 06.12.11   by: Armin Haaf
  * <p/>
  *

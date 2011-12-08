@@ -26,7 +26,6 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 
 /**
- * <!--
  * Created: 02.12.11   by: Armin Haaf
  * <p/>
  *

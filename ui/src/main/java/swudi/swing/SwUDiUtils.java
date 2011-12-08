@@ -21,7 +21,6 @@ import swudi.device.USBDisplay;
 import java.awt.Component;
 
 /**
- * <!--
  * Created: 02.12.11   by: Armin Haaf
  * <p/>
  *
