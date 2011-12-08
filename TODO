@@ -1,0 +1,1 @@
+Remove the usage of a native peer (JWindow), to correct way to do it would be to use a peerless toolkit -> similar to http://sourceforge.net/projects/vncjlgpl/.
