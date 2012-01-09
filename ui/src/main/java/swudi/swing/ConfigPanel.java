@@ -45,7 +45,7 @@ public class ConfigPanel extends JPanel {
     private JCheckBox inversCheckbox;
     private JButton calibrateButton;
     private JButton resetButton;
-    private JCheckBox backlightCheckbox;
+    private JSlider backlightSlider;
 
     private USBDisplay usbDisplay;
 
@@ -70,10 +70,10 @@ public class ConfigPanel extends JPanel {
             }
         });
 
-        backlightCheckbox.addActionListener(new ActionListener() {
+        backlightSlider.addChangeListener(new ChangeListener() {
             @Override
-            public void actionPerformed(final ActionEvent e) {
-                getUSBDisplay().setBacklight(backlightCheckbox.isSelected());
+            public void stateChanged(final ChangeEvent e) {
+                getUSBDisplay().setBacklight(backlightSlider.getValue());
             }
         });
 
@@ -141,10 +141,10 @@ public class ConfigPanel extends JPanel {
         final JLabel label3 = new JLabel();
         label3.setText("Backlight");
         add(label3, cc.xy(1, 3));
-        backlightCheckbox = new JCheckBox();
-        backlightCheckbox.setSelected(true);
-        backlightCheckbox.setText("");
-        add(backlightCheckbox, cc.xy(3, 3));
+        backlightSlider = new JSlider();
+        backlightSlider.setPaintLabels(false);
+        backlightSlider.setPaintTicks(true);
+        add(backlightSlider, cc.xy(3, 3));
 
     }
 }

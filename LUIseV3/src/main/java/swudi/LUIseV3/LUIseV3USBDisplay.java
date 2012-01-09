@@ -343,8 +343,9 @@ public class LUIseV3USBDisplay implements USBDisplay {
         super.finalize();
     }
 
-    public void setBacklight(final boolean pSelected) {
-        sendCommand("BackLight (" + (pSelected ? "1" : "0") + ",0,0);");
+    @Override
+    public void setBacklight(final int pBrightness) {
+        sendCommand("BackLight (" + pBrightness + ",0,0);");
     }
 
     public void reset() {

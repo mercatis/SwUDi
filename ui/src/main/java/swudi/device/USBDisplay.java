@@ -53,7 +53,7 @@ public interface USBDisplay {
 
     public void close();
 
-    public void setBacklight(final boolean pOn);
+    public void setBacklight(final int pBrightness);
 
     public void reset();
 

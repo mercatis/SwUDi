@@ -173,7 +173,7 @@ public class BufferedUSBDisplay extends JLabel implements USBDisplay {
     }
 
     @Override
-    public void setBacklight(final boolean pOn) {
+    public void setBacklight(final int pBrightness) {
     }
 
     @Override
