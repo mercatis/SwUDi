@@ -24,6 +24,7 @@ import swudi.swing.TestPanel;
 import swudi.swing.plaf.BlackAndWhiteTheme;
 
 import javax.swing.JButton;
+import javax.swing.JCheckBox;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
@@ -42,7 +43,6 @@ import java.util.List;
 /**
  * Created: 03.12.11   by: Armin Haaf
  * <p/>
- *
  *
  * @author Armin Haaf
  */
@@ -93,7 +93,7 @@ public class LUIseV3Test {
     }
 
     private static void startDevice(final FTDevice tDevice) throws FTD2XXException {
-        LUIseV3USBDisplay tDisplay = new LUIseV3USBDisplay(tDevice);
+        final LUIseV3USBDisplay tDisplay = new LUIseV3USBDisplay(tDevice);
         final TransferStatistics tTransferStatistics = tDisplay.getTransferStatistics();
 
         // both have problems with menu
@@ -128,6 +128,31 @@ public class LUIseV3Test {
         tPanel.add(tMouseRefreshRateSlider);
         tPanel.add(tPaintLabel);
         tPanel.add(tPaintRateSlider);
+
+        final JCheckBox tOutput1 = new JCheckBox();
+        final JCheckBox tOutput2 = new JCheckBox();
+        final JCheckBox tOutput3 = new JCheckBox();
+        ActionListener tOutputActionListener = new ActionListener() {
+            @Override
+            public void actionPerformed(final ActionEvent e) {
+                int tBitMask = 0;
+                tBitMask += tOutput1.isSelected() ? 1 : 0;
+                tBitMask += tOutput2.isSelected() ? 2 : 0;
+                tBitMask += tOutput3.isSelected() ? 4 : 0;
+
+                tDisplay.sendCommand("Outputs (" + tBitMask + ");");
+            }
+        };
+        tOutput1.addActionListener(tOutputActionListener);
+        tOutput2.addActionListener(tOutputActionListener);
+        tOutput3.addActionListener(tOutputActionListener);
+
+        tPanel.add(new JLabel("output 1"));
+        tPanel.add(tOutput1);
+        tPanel.add(new JLabel("output 2"));
+        tPanel.add(tOutput2);
+        tPanel.add(new JLabel("output 3"));
+        tPanel.add(tOutput3);
 
         TestPanel tTestPanel = new TestPanel();
 
