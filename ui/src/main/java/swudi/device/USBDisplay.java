@@ -57,4 +57,7 @@ public interface USBDisplay {
 
     public void reset();
 
+    boolean isPaused();
+
+    void setPaused(boolean pPaused);
 }

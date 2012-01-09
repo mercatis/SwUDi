@@ -57,7 +57,10 @@ public class LUIseV3USBDisplay implements USBDisplay {
     private long connectStartedMillis;
 
     private USBDisplayExceptionHandler<FTD2XXException> exceptionHandler;
+
     private boolean inverted = false;
+
+    private boolean paused = false;
 
     private final byte[] bitmapData = new byte[11000];
 
@@ -169,6 +172,10 @@ public class LUIseV3USBDisplay implements USBDisplay {
     }
 
     public Point getTouch() {
+        if ( isPaused() ) {
+            return null;
+        }
+
         sendData(TOUCH_COMMAND);
 
         String tResult = readReply();
@@ -180,6 +187,22 @@ public class LUIseV3USBDisplay implements USBDisplay {
                     Integer.parseInt(tMatcher.group(3)));
         } else {
             return null;
+        }
+    }
+
+    @Override
+    public boolean isPaused() {
+        return paused;
+    }
+
+    @Override
+    public void setPaused(final boolean pPaused) {
+        paused = pPaused;
+
+        if ( paused ) {
+            setBacklight(0);
+        } else {
+            setBacklight(100);
         }
     }
 
@@ -288,6 +311,9 @@ public class LUIseV3USBDisplay implements USBDisplay {
     }
 
     public void paintClip(final BufferedImage pBufferedImage, final int pX, final int pY, final int pWidth, final int pHeight) {
+        if ( isPaused() ) {
+            return;
+        }
         // we support only byte aligned clips
         final int x = pX & ~7;
         final int y = pY & ~7;

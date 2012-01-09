@@ -157,7 +157,10 @@ public class DoubleBufferRenderer implements DisplayRenderer {
 
     private void renderDirtyRegion(final List<Rectangle> pDirtyRegions) {
         try {
-            // check if render thread has done, if not we drop a frame
+            if (usbDisplay.isPaused()) {
+                return;
+            }
+                // check if render thread has done, if not we drop a frame
             if (!rendering.getAndSet(true)) {
 
                 final Rectangle tDirtyRegion = calcDiffRectangle(offScreenImage, displayImage);

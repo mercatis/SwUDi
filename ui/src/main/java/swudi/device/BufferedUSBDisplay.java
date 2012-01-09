@@ -179,4 +179,13 @@ public class BufferedUSBDisplay extends JLabel implements USBDisplay {
     @Override
     public void reset() {
     }
+
+    @Override
+    public boolean isPaused() {
+        return false;
+    }
+
+    @Override
+    public void setPaused(final boolean pPaused) {
+    }
 }
