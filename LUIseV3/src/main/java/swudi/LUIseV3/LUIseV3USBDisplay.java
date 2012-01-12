@@ -204,8 +204,10 @@ public class LUIseV3USBDisplay implements USBDisplay {
         if (paused) {
             restoreBacklightValue = getBacklight();
             setBacklightWithoutStore(0);
+            sendCommand("DisplayOn (0);");
         } else {
             setBacklightWithoutStore(restoreBacklightValue);
+            sendCommand("DisplayOn (1);");
         }
     }
 
@@ -376,11 +378,11 @@ public class LUIseV3USBDisplay implements USBDisplay {
     public void setBacklight(final int pBrightness) {
         setBacklightWithoutStore(pBrightness);
         sendCommand("StoreBackLight;");
+        restoreBacklightValue = pBrightness;
     }
 
     private void setBacklightWithoutStore(final int pBrightness) {
         sendCommand("BackLight (" + pBrightness + ",0,0);");
-        restoreBacklightValue = pBrightness;
     }
 
     @Override
