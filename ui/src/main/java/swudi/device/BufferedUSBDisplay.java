@@ -140,7 +140,7 @@ public class BufferedUSBDisplay extends JLabel implements USBDisplay {
 
     @Override
     public int getContrast() {
-        return 0;
+        return 100;
     }
 
     @Override
@@ -174,6 +174,11 @@ public class BufferedUSBDisplay extends JLabel implements USBDisplay {
 
     @Override
     public void setBacklight(final int pBrightness) {
+    }
+
+    @Override
+    public int getBacklight() {
+        return 100;
     }
 
     @Override

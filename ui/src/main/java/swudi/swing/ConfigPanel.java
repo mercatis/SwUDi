@@ -29,12 +29,14 @@ import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.ComponentAdapter;
+import java.awt.event.ComponentEvent;
 
 /**
  * Created: 02.12.11   by: Armin Haaf
  * <p/>
- *
- *
+ * <p/>
+ * <p/>
  * a panel to configure the usb display
  *
  * @author Armin Haaf
@@ -91,6 +93,23 @@ public class ConfigPanel extends JPanel {
                 getUSBDisplay().clearScreen();
             }
         });
+
+        initDefaults();
+
+        addComponentListener(new ComponentAdapter() {
+            @Override
+            public void componentShown(final ComponentEvent e) {
+                initDefaults();
+            }
+        });
+    }
+
+    private void initDefaults() {
+        USBDisplay tUSBDisplay = getUSBDisplay();
+        if (tUSBDisplay != null) {
+            contrastSlider.setValue(getUSBDisplay().getContrast());
+            backlightSlider.setValue(getUSBDisplay().getBacklight());
+        }
     }
 
     private void initUSBDisplay(final USBDisplay pUSBDisplay) {

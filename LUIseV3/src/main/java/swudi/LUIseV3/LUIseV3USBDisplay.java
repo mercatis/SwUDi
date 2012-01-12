@@ -32,7 +32,7 @@ import java.util.regex.Pattern;
 /**
  * Created: 02.12.11   by: Armin Haaf
  * <p/>
- *
+ * <p/>
  * <p/>
  * a implementation of usb display of the <A href="http://www.wallbraun-electronics.de/produkte/lcdusbinterfacev301/index.html">LIUseV3</A>
  *
@@ -63,6 +63,8 @@ public class LUIseV3USBDisplay implements USBDisplay {
     private boolean paused = false;
 
     private final byte[] bitmapData = new byte[11000];
+
+    private int restoreBacklightValue = 100;
 
     @Override
     public BufferedImage createOffScreenBuffer() {
@@ -172,7 +174,7 @@ public class LUIseV3USBDisplay implements USBDisplay {
     }
 
     public Point getTouch() {
-        if ( isPaused() ) {
+        if (isPaused()) {
             return null;
         }
 
@@ -199,10 +201,11 @@ public class LUIseV3USBDisplay implements USBDisplay {
     public void setPaused(final boolean pPaused) {
         paused = pPaused;
 
-        if ( paused ) {
-            setBacklight(0);
+        if (paused) {
+            restoreBacklightValue = getBacklight();
+            setBacklightWithoutStore(0);
         } else {
-            setBacklight(100);
+            setBacklightWithoutStore(restoreBacklightValue);
         }
     }
 
@@ -311,7 +314,7 @@ public class LUIseV3USBDisplay implements USBDisplay {
     }
 
     public void paintClip(final BufferedImage pBufferedImage, final int pX, final int pY, final int pWidth, final int pHeight) {
-        if ( isPaused() ) {
+        if (isPaused()) {
             return;
         }
         // we support only byte aligned clips
@@ -371,7 +374,21 @@ public class LUIseV3USBDisplay implements USBDisplay {
 
     @Override
     public void setBacklight(final int pBrightness) {
+        setBacklightWithoutStore(pBrightness);
+        sendCommand("StoreBackLight;");
+    }
+
+    private void setBacklightWithoutStore(final int pBrightness) {
         sendCommand("BackLight (" + pBrightness + ",0,0);");
+        restoreBacklightValue = pBrightness;
+    }
+
+    @Override
+    public int getBacklight() {
+        // TODO -> this is currently unsupported by the device
+//        sendCommand("BackLight?;");
+//        return Integer.parseInt(readReply().substring("BackLight ".length() + 1));
+        return restoreBacklightValue;
     }
 
     public void reset() {

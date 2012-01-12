@@ -55,6 +55,8 @@ public interface USBDisplay {
 
     public void setBacklight(final int pBrightness);
 
+    public int getBacklight();
+
     public void reset();
 
     boolean isPaused();
