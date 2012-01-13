@@ -38,7 +38,7 @@ import java.util.TimerTask;
 /**
  * Created: 05.12.11   by: Armin Haaf
  * <p/>
- *
+ * <p/>
  * <p/>
  * Uses a window to manage the swing repaints and events. The window should be in an unvisible area (setLocation(-10000,-10000).
  * However Popups are always rendered in the visible area -> so it is better to not use popups, as they just occur on the
@@ -133,6 +133,10 @@ public class SwUDiWindow extends JWindow implements USBDeviceFrame {
         setLocation(-10000, -10000);
     }
 
+    public void setPaused(boolean pPaused) {
+        usbDisplay.setPaused(pPaused);
+    }
+
     @Override
     /**
      * thats the magic -> everything is painted in this graphics, so need need to do the paint twice
@@ -221,14 +225,16 @@ public class SwUDiWindow extends JWindow implements USBDeviceFrame {
 
     private void pollTouch() {
         try {
-            final Point tTouchPoint = usbDisplay.getTouch();
-            // update the mouse in the event thread -> we do not need to make more events than event dispatching can handle, so invokeAndWait is ok
-            SwingUtilities.invokeAndWait(new Runnable() {
-                @Override
-                public void run() {
-                    mouse.setTouchPosition(tTouchPoint != null ? SwingUtilities.convertPoint(SwUDiWindow.this, tTouchPoint, SwUDiWindow.this) : null);
-                }
-            });
+            if (!usbDisplay.isPaused()) {
+                final Point tTouchPoint = usbDisplay.getTouch();
+                // update the mouse in the event thread -> we do not need to make more events than event dispatching can handle, so invokeAndWait is ok
+                SwingUtilities.invokeAndWait(new Runnable() {
+                    @Override
+                    public void run() {
+                        mouse.setTouchPosition(tTouchPoint != null ? SwingUtilities.convertPoint(SwUDiWindow.this, tTouchPoint, SwUDiWindow.this) : null);
+                    }
+                });
+            }
         } catch (Exception ex) {
             ex.printStackTrace();
         }

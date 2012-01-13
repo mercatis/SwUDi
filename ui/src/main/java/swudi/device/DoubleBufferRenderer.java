@@ -30,7 +30,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * Created: 04.12.11   by: Armin Haaf
  * <p/>
  *
- *
  * @author Armin Haaf
  */
 public class DoubleBufferRenderer implements DisplayRenderer {
@@ -50,6 +49,8 @@ public class DoubleBufferRenderer implements DisplayRenderer {
     private final USBDisplay usbDisplay;
 
     private final ExecutorService rendererThread = Executors.newSingleThreadExecutor();
+
+    private boolean paused;
 
     public DoubleBufferRenderer(final USBDisplay pUsbDisplay) {
         offScreenImage = pUsbDisplay.createOffScreenBuffer();
@@ -105,7 +106,7 @@ public class DoubleBufferRenderer implements DisplayRenderer {
             }
         }
 
-        System.out.println("calc diff rectangle " + (System.currentTimeMillis() - tStart) +  "  " + new Rectangle(tFirstChangedX, tFirstChangedY, tLastChangedX - tFirstChangedX + 1, tLastChangedY - tFirstChangedY + 1));
+        System.out.println("calc diff rectangle " + (System.currentTimeMillis() - tStart) + "  " + new Rectangle(tFirstChangedX, tFirstChangedY, tLastChangedX - tFirstChangedX + 1, tLastChangedY - tFirstChangedY + 1));
         if (tFirstChangedX != Integer.MAX_VALUE || tFirstChangedY != Integer.MAX_VALUE || tLastChangedY != 0 || tLastChangedX != 0) {
             return new Rectangle(tFirstChangedX, tFirstChangedY, tLastChangedX - tFirstChangedX + 1, tLastChangedY - tFirstChangedY + 1);
         } else {
@@ -158,12 +159,21 @@ public class DoubleBufferRenderer implements DisplayRenderer {
     private void renderDirtyRegion(final List<Rectangle> pDirtyRegions) {
         try {
             if (usbDisplay.isPaused()) {
+                paused = true;
                 return;
             }
-                // check if render thread has done, if not we drop a frame
+
+            // check if render thread has done, if not we drop a frame
             if (!rendering.getAndSet(true)) {
 
-                final Rectangle tDirtyRegion = calcDiffRectangle(offScreenImage, displayImage);
+                final Rectangle tDirtyRegion;
+                if (paused) {
+                    tDirtyRegion = new Rectangle(0, 0, offScreenImage.getWidth(), offScreenImage.getHeight());
+                    paused = false;
+                } else {
+                    tDirtyRegion = calcDiffRectangle(offScreenImage, displayImage);
+                }
+
                 if (tDirtyRegion != null) {
 
 //                    System.out.println("dirty region " + tDirtyRegion);
