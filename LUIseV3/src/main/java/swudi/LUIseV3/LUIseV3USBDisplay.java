@@ -46,6 +46,7 @@ public class LUIseV3USBDisplay implements USBDisplay {
     private static final byte[] BITMAP_COMMAND_PREFIX = "Bitmap (0,".getBytes(US_ASCII);
     private static final byte[] BITMAP_COMMAND_POSTFIX = ");".getBytes(US_ASCII);
     private static Pattern TOUCH_PATTERN = Pattern.compile("Touch: ([0-9]),([0-9]+),([0-9]+)");
+    private static Pattern BACKLIGHT_PATTERN = Pattern.compile("Backlight: ([0-9]+),([0-9]+),([0-9]+)");
 
     private FTDevice ftDevice;
 
@@ -104,6 +105,7 @@ public class LUIseV3USBDisplay implements USBDisplay {
         ftDevice.setUSBParameters(256, 10240);
 
         setScreenConfig(0, 2, 0);
+        setDisplayOn(true);
     }
 
     public void clearScreen() {
@@ -119,9 +121,10 @@ public class LUIseV3USBDisplay implements USBDisplay {
         sendCommand("StoreContrast;");
     }
 
-    public int getContrast() {
+    public synchronized int getContrast() {
         sendCommand("Contrast?;");
-        return Integer.parseInt(readReply().substring("Contrast ".length() + 1));
+        final String tReply = readReply();
+        return Integer.parseInt(tReply.substring("Contrast ".length() + 1));
     }
 
     public void setInverted(final boolean pInverted) {
@@ -173,7 +176,7 @@ public class LUIseV3USBDisplay implements USBDisplay {
         sendCommand("TouchCalib;");
     }
 
-    public Point getTouch() {
+    public synchronized Point getTouch() {
         if (isPaused()) {
             return null;
         }
@@ -377,20 +380,21 @@ public class LUIseV3USBDisplay implements USBDisplay {
     @Override
     public void setBacklight(final int pBrightness) {
         setBacklightWithoutStore(pBrightness);
-        sendCommand("StoreBackLight;");
+        sendCommand("StoreBacklight;");
         restoreBacklightValue = pBrightness;
     }
 
     private void setBacklightWithoutStore(final int pBrightness) {
-        sendCommand("BackLight (" + pBrightness + ",0,0);");
+        sendCommand("Backlight (" + pBrightness + ",0,0);");
     }
 
     @Override
-    public int getBacklight() {
-        // TODO -> this is currently unsupported by the device
-//        sendCommand("BackLight?;");
-//        return Integer.parseInt(readReply().substring("BackLight ".length() + 1));
-        return restoreBacklightValue;
+    public synchronized int getBacklight() {
+        sendCommand("Backlight?;");
+        final String tReply = readReply();
+        final Matcher tMatcher = BACKLIGHT_PATTERN.matcher(tReply);
+        tMatcher.find();
+        return Integer.parseInt(tMatcher.group(1));
     }
 
     public void reset() {

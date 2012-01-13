@@ -50,6 +50,8 @@ public class ConfigPanel extends JPanel {
     private JSlider backlightSlider;
 
     private USBDisplay usbDisplay;
+    private final JLabel contrastLabel = new JLabel();
+    private final JLabel backlightLabel = new JLabel();
 
     public ConfigPanel() {
         this(null);
@@ -61,7 +63,9 @@ public class ConfigPanel extends JPanel {
         contrastSlider.addChangeListener(new ChangeListener() {
             @Override
             public void stateChanged(final ChangeEvent e) {
-                getUSBDisplay().setContrast(contrastSlider.getValue());
+                final int tContrast = contrastSlider.getValue();
+                getUSBDisplay().setContrast(tContrast);
+                contrastLabel.setText("Contrast " + tContrast);
             }
         });
 
@@ -75,7 +79,9 @@ public class ConfigPanel extends JPanel {
         backlightSlider.addChangeListener(new ChangeListener() {
             @Override
             public void stateChanged(final ChangeEvent e) {
-                getUSBDisplay().setBacklight(backlightSlider.getValue());
+                final int tBacklight = backlightSlider.getValue();
+                getUSBDisplay().setBacklight(tBacklight);
+                backlightLabel.setText("Backlight " + tBacklight);
             }
         });
 
@@ -131,10 +137,9 @@ public class ConfigPanel extends JPanel {
     private void initLayout() {
         setLayout(new FormLayout("fill:d:noGrow,left:4dlu:noGrow,fill:d:grow", "center:d:noGrow,top:4dlu:noGrow,center:max(d;4px):noGrow,top:4dlu:noGrow,center:max(d;4px):noGrow,top:4dlu:noGrow,center:max(d;4px):noGrow,top:4dlu:noGrow,center:max(d;4px):noGrow"));
 
-        final JLabel label1 = new JLabel();
-        label1.setText("Contrast");
+        contrastLabel.setText("Contrast");
         CellConstraints cc = new CellConstraints();
-        add(label1, cc.xy(1, 1));
+        add(contrastLabel, cc.xy(1, 1));
         contrastSlider = new JSlider();
         contrastSlider.setPaintLabels(false);
         contrastSlider.setPaintTicks(true);
@@ -157,9 +162,8 @@ public class ConfigPanel extends JPanel {
         resetButton.setHorizontalTextPosition(2);
         resetButton.setText("Reset");
         add(resetButton, cc.xy(3, 9, CellConstraints.DEFAULT, CellConstraints.FILL));
-        final JLabel label3 = new JLabel();
-        label3.setText("Backlight");
-        add(label3, cc.xy(1, 3));
+        backlightLabel.setText("Backlight");
+        add(backlightLabel, cc.xy(1, 3));
         backlightSlider = new JSlider();
         backlightSlider.setPaintLabels(false);
         backlightSlider.setPaintTicks(true);
