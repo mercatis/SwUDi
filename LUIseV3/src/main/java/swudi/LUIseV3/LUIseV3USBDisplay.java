@@ -91,6 +91,11 @@ public class LUIseV3USBDisplay implements USBDisplay {
         exceptionHandler = pExceptionHandler;
     }
 
+    @Override
+    public void setOutput(int pBitMask) {
+        sendCommand("Outputs (" + pBitMask + ");");
+    }
+
     private byte[] getBytes(String pString) {
         return pString.getBytes(US_ASCII);
     }

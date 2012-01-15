@@ -62,4 +62,6 @@ public interface USBDisplay {
     boolean isPaused();
 
     void setPaused(boolean pPaused);
+
+    void setOutput(int pBitMask);
 }
