@@ -23,12 +23,15 @@ import swudi.swing.SwUDiWindow;
 import swudi.swing.TestPanel;
 import swudi.swing.plaf.BlackAndWhiteTheme;
 
+import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JSlider;
+import javax.swing.JToggleButton;
+import javax.swing.SwingUtilities;
 import javax.swing.Timer;
 import javax.swing.UIManager;
 import javax.swing.event.ChangeEvent;
@@ -52,7 +55,7 @@ public class LUIseV3Test {
         MetalLookAndFeel.setCurrentTheme(new BlackAndWhiteTheme());
 
         JFrame tFrame = new JFrame("LUIseV3Test");
-        final JLabel tInfoLabel = new JLabel();
+        final JPanel tDevicePanel = new JPanel(new GridLayout(0,1));
         final JButton tButton = new JButton("Exit");
         tButton.addActionListener(new ActionListener() {
             @Override
@@ -60,7 +63,7 @@ public class LUIseV3Test {
                 System.exit(0);
             }
         });
-        tFrame.add(tInfoLabel);
+        tFrame.add(tDevicePanel);
         tFrame.add(tButton, BorderLayout.SOUTH);
 
         final List<FTDevice> tDevices = FTDevice.getDevices();
@@ -70,29 +73,38 @@ public class LUIseV3Test {
             tButton.setText("found " + tDevices.size() + " device(s), press to exit");
         }
 
-        StringBuilder tStringBuilder = new StringBuilder("<html><ol>");
         for (FTDevice tDevice : tDevices) {
             if ("LCD-USB-Interface V3".equals(tDevice.getDevDescription())) {
-                tStringBuilder.append("<li>LUIseV3 " + tDevice.getDevSerialNumber());
                 try {
-                    startDevice(tDevice);
+                    final LUIseV3USBDisplay tDisplay = startDevice(tDevice);
+                    final JToggleButton tDeviceButton = new JToggleButton("LUIseV3 " + tDevice.getDevSerialNumber());
+                    tDeviceButton.setSelected(true);
+                    SwingUtilities.invokeLater(new Runnable() {
+                        @Override
+                        public void run() {
+                            tDeviceButton.addActionListener(new ActionListener() {
+                                @Override
+                                public void actionPerformed(final ActionEvent e) {
+                                    tDisplay.setPaused(!tDeviceButton.isSelected());
+                                }
+                            });
+                        }
+                    });
+                    tDevicePanel.add(tDeviceButton);
                 } catch (Exception ex) {
-                    tStringBuilder.append(" but cannot activate it: " + ex.getMessage());
+                    tDevicePanel.add(new JLabel("LUIseV3 " + tDevice.getDevSerialNumber() + " but cannot activate it: " + ex.getMessage()));
                     ex.printStackTrace();
                 }
-                tStringBuilder.append("</li>");
             } else {
-                tStringBuilder.append("<li>unknown device " + tDevice.getDevSerialNumber() + "</li>");
+                tDevicePanel.add(new JLabel("unknown device " + tDevice.getDevSerialNumber()));
             }
-            tStringBuilder.append("</ol>");
         }
-        tInfoLabel.setText(tStringBuilder.toString());
 
         tFrame.pack();
         tFrame.setVisible(true);
     }
 
-    private static void startDevice(final FTDevice tDevice) throws FTD2XXException {
+    private static LUIseV3USBDisplay startDevice(final FTDevice tDevice) throws FTD2XXException {
         final LUIseV3USBDisplay tDisplay = new LUIseV3USBDisplay(tDevice);
         final TransferStatistics tTransferStatistics = tDisplay.getTransferStatistics();
 
