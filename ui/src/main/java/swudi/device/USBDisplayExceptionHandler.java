@@ -25,6 +25,6 @@ package swudi.device;
  */
 public interface USBDisplayExceptionHandler<E extends Exception> {
 
-    void handleException(E pException);
+    void handleException(USBDisplay pUSBDisplay, E pException);
 
 }

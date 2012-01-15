@@ -158,7 +158,7 @@ public class LUIseV3USBDisplay implements USBDisplay {
     private void handleException(final FTD2XXException pEx) {
         try {
             if (exceptionHandler != null) {
-                exceptionHandler.handleException(pEx);
+                exceptionHandler.handleException(this, pEx);
             } else {
                 pEx.printStackTrace();
             }
