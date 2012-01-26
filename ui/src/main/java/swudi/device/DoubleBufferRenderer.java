@@ -16,6 +16,7 @@
 
 package swudi.device;
 
+import swudi.device.USBDisplay.State;
 import swudi.swing.DisplayRenderer;
 
 import java.awt.Rectangle;
@@ -65,18 +66,12 @@ public class DoubleBufferRenderer implements DisplayRenderer {
 
     // check if we need to copy data to display
     private boolean isBufferDifferent(DataBuffer pBuffer1, DataBuffer pBuffer2) {
-        long tStart = System.currentTimeMillis();
-
-        try {
-            for (int i = pBuffer1.getSize() - 1; i >= 0; i--) {
-                if (pBuffer1.getElem(i) != pBuffer2.getElem(i)) {
-                    return true;
-                }
+        for (int i = pBuffer1.getSize() - 1; i >= 0; i--) {
+            if (pBuffer1.getElem(i) != pBuffer2.getElem(i)) {
+                return true;
             }
-            return false;
-        } finally {
-            System.out.println("calc different " + (System.currentTimeMillis() - tStart));
         }
+        return false;
     }
 
     /**
@@ -106,7 +101,7 @@ public class DoubleBufferRenderer implements DisplayRenderer {
             }
         }
 
-        System.out.println("calc diff rectangle " + (System.currentTimeMillis() - tStart) + "  " + new Rectangle(tFirstChangedX, tFirstChangedY, tLastChangedX - tFirstChangedX + 1, tLastChangedY - tFirstChangedY + 1));
+//        System.out.println("calc diff rectangle " + (System.currentTimeMillis() - tStart) + "  " + new Rectangle(tFirstChangedX, tFirstChangedY, tLastChangedX - tFirstChangedX + 1, tLastChangedY - tFirstChangedY + 1));
         if (tFirstChangedX != Integer.MAX_VALUE || tFirstChangedY != Integer.MAX_VALUE || tLastChangedY != 0 || tLastChangedX != 0) {
             return new Rectangle(tFirstChangedX, tFirstChangedY, tLastChangedX - tFirstChangedX + 1, tLastChangedY - tFirstChangedY + 1);
         } else {
@@ -158,7 +153,7 @@ public class DoubleBufferRenderer implements DisplayRenderer {
 
     private void renderDirtyRegion(final List<Rectangle> pDirtyRegions) {
         try {
-            if (usbDisplay.isPaused()) {
+            if (usbDisplay.getState()!= State.ON) {
                 paused = true;
                 return;
             }

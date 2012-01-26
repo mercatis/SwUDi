@@ -19,6 +19,8 @@ package swudi.swing;
 import swudi.device.DoubleBufferRenderer;
 import swudi.device.SwUDiRepaintManager;
 import swudi.device.USBDisplay;
+import swudi.device.USBDisplay.State;
+import swudi.device.USBDisplay.TouchEventHandler;
 
 import javax.swing.JWindow;
 import javax.swing.RepaintManager;
@@ -33,7 +35,6 @@ import java.awt.Point;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.image.BufferedImage;
-import java.util.TimerTask;
 
 /**
  * Created: 05.12.11   by: Armin Haaf
@@ -71,6 +72,7 @@ public class SwUDiWindow extends JWindow implements USBDeviceFrame {
     private final Point lastPaintedMousePosition = new Point();
 
     {
+        // inside swing event dispatching thread
         paintTimer = new Timer(1000 / paintRate, new ActionListener() {
             public void actionPerformed(final ActionEvent e) {
                 // TODO mouse pointer painting did not work
@@ -95,20 +97,6 @@ public class SwUDiWindow extends JWindow implements USBDeviceFrame {
     }
 
     private boolean paintMousePointer = false;
-    private int mouseRefreshRate = 50;
-
-    // use a timer outside eventdispatching to get the touch info
-    // -> howver mouse events must be send inside the eventdispatching thread
-    private java.util.TimerTask mouseRefreshTimer = new java.util.TimerTask() {
-        @Override
-        public void run() {
-            pollTouch();
-        }
-    };
-
-    // TODO use executor
-    static java.util.Timer TIMER = new java.util.Timer("SWUDI_MOUSE_REFRESH_TIMER");
-
 
     public SwUDiWindow(USBDisplay pUSBDisplay) throws HeadlessException {
         usbDisplay = pUSBDisplay;
@@ -125,7 +113,18 @@ public class SwUDiWindow extends JWindow implements USBDeviceFrame {
         usbDisplay.clearScreen();
 
         paintTimer.start();
-        TIMER.scheduleAtFixedRate(mouseRefreshTimer, 1000 / mouseRefreshRate, 1000 / mouseRefreshRate);
+
+        pUSBDisplay.setTouchEventHandler(new TouchEventHandler() {
+            @Override
+            public void onTouchEvent(final Point pTouchPoint) {
+                SwingUtilities.invokeLater(new Runnable() {
+                    @Override
+                    public void run() {
+                        mouse.setTouchPosition(pTouchPoint != null ? SwingUtilities.convertPoint(SwUDiWindow.this, pTouchPoint, SwUDiWindow.this) : null);
+                    }
+                });
+            }
+        });
 
         setAlwaysOnTop(false);
         setIgnoreRepaint(true);
@@ -133,8 +132,9 @@ public class SwUDiWindow extends JWindow implements USBDeviceFrame {
         setLocation(-10000, -10000);
     }
 
-    public void setPaused(boolean pPaused) {
-        usbDisplay.setPaused(pPaused);
+    public void setEnabled(boolean pEnabled) {
+        super.setEnabled(pEnabled);
+        usbDisplay.setState(pEnabled ? State.ON : State.OFF);
     }
 
     @Override
@@ -176,25 +176,6 @@ public class SwUDiWindow extends JWindow implements USBDeviceFrame {
     }
 
     @Override
-    public int getMouseRefreshRate() {
-        return mouseRefreshRate;
-    }
-
-    @Override
-    public void setMouseRefreshRate(final int pMouseRefreshRate) {
-        mouseRefreshRate = pMouseRefreshRate;
-        mouseRefreshTimer.cancel();
-        mouseRefreshTimer = new TimerTask() {
-            @Override
-            public void run() {
-                pollTouch();
-            }
-        };
-        TIMER.schedule(mouseRefreshTimer, 1000 / mouseRefreshRate, 1000 / mouseRefreshRate);
-    }
-
-
-    @Override
     public int getPaintRate() {
         return paintRate;
     }
@@ -220,23 +201,6 @@ public class SwUDiWindow extends JWindow implements USBDeviceFrame {
         super.paint(g);
         if (paintMousePointer) {
             mouse.paintMousePointer((Graphics2D) g);
-        }
-    }
-
-    private void pollTouch() {
-        try {
-            if (!usbDisplay.isPaused()) {
-                final Point tTouchPoint = usbDisplay.getTouch();
-                // update the mouse in the event thread -> we do not need to make more events than event dispatching can handle, so invokeAndWait is ok
-                SwingUtilities.invokeAndWait(new Runnable() {
-                    @Override
-                    public void run() {
-                        mouse.setTouchPosition(tTouchPoint != null ? SwingUtilities.convertPoint(SwUDiWindow.this, tTouchPoint, SwUDiWindow.this) : null);
-                    }
-                });
-            }
-        } catch (Exception ex) {
-            ex.printStackTrace();
         }
     }
 

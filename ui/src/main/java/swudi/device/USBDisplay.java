@@ -27,12 +27,12 @@ import java.awt.image.BufferedImage;
  * @author Armin Haaf
  */
 public interface USBDisplay {
+    
+    public void setTouchEventHandler(TouchEventHandler pTouchEventHandler);
 
     public BufferedImage createOffScreenBuffer();
 
     public void clearScreen();
-
-    public void setDisplayOn(boolean pOn);
 
     public void setContrast(int pContrast);
 
@@ -43,8 +43,6 @@ public interface USBDisplay {
     public boolean isInverted();
 
     public void calibrateTouch();
-
-    public Point getTouch();
 
     /**
      * a synchronized access is guaranteed
@@ -59,9 +57,17 @@ public interface USBDisplay {
 
     public void reset();
 
-    boolean isPaused();
+    void setState(State pState);
 
-    void setPaused(boolean pPaused);
+    State getState();
 
     void setOutput(int pBitMask);
+    
+    public interface TouchEventHandler {
+        public void onTouchEvent(Point pTouchPoint);
+    }
+    
+    public enum State {
+        ON, PAUSED, OFF;
+    }
 }

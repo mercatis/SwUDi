@@ -18,11 +18,9 @@ package swudi.device;
 
 import javax.swing.ImageIcon;
 import javax.swing.JLabel;
-import javax.swing.SwingUtilities;
 import javax.swing.Timer;
 import java.awt.Color;
 import java.awt.Dimension;
-import java.awt.MouseInfo;
 import java.awt.Point;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -34,8 +32,8 @@ import java.awt.image.BufferedImage;
 /**
  * Created: 02.12.11   by: Armin Haaf
  * <p/>
- *
- *
+ * <p/>
+ * <p/>
  * a USBDisplay to show in a JLabel
  *
  * @author Armin Haaf
@@ -44,11 +42,16 @@ public class BufferedUSBDisplay extends JLabel implements USBDisplay {
 
     private BufferedImage offScreenImage;
 
-    private Point touchPoint;
-
     private int refreshRate = 10;
 
-    private final Timer refreshTimer = new Timer(1000/refreshRate, new ActionListener() {
+    private State state = State.ON;
+
+    // the current touch position. a TouchEvent is fired, when the currentTouch changes
+    private Point currentTouch;
+
+    private TouchEventHandler touchEventHandler;
+
+    private final Timer refreshTimer = new Timer(1000 / refreshRate, new ActionListener() {
         public void actionPerformed(final ActionEvent e) {
             ImageIcon tIcon = new ImageIcon();
             tIcon.setImage(offScreenImage);
@@ -70,19 +73,19 @@ public class BufferedUSBDisplay extends JLabel implements USBDisplay {
         addMouseListener(new MouseAdapter() {
             @Override
             public void mousePressed(final MouseEvent e) {
-                touchPoint = e.getPoint();
+                setCurrentTouch(e.getPoint());
             }
 
             @Override
             public void mouseReleased(final MouseEvent e) {
-                touchPoint = null;
+                setCurrentTouch(null);
             }
         });
 
         addMouseMotionListener(new MouseMotionAdapter() {
             @Override
             public void mouseDragged(final MouseEvent e) {
-                touchPoint = e.getPoint();
+                setCurrentTouch(e.getPoint());
             }
         });
 
@@ -97,6 +100,17 @@ public class BufferedUSBDisplay extends JLabel implements USBDisplay {
         refreshRate = pRefreshRate;
         refreshTimer.setDelay(1000 / refreshRate);
     }
+
+    private synchronized void setCurrentTouch(final Point pPoint) {
+        if (!((pPoint == null) ? (currentTouch == null) : pPoint.equals(currentTouch))) {
+            // if no equals, send MouseEvent...
+            currentTouch = pPoint;
+            if (touchEventHandler != null) {
+                touchEventHandler.onTouchEvent(currentTouch);
+            }
+        }
+    }
+
 
     @Override
     public void setSize(final int width, final int height) {
@@ -120,6 +134,11 @@ public class BufferedUSBDisplay extends JLabel implements USBDisplay {
 
 
     @Override
+    public void setTouchEventHandler(final TouchEventHandler pTouchEventHandler) {
+        touchEventHandler = pTouchEventHandler;
+    }
+
+    @Override
     public BufferedImage createOffScreenBuffer() {
         return offScreenImage;
     }
@@ -128,10 +147,6 @@ public class BufferedUSBDisplay extends JLabel implements USBDisplay {
     public void clearScreen() {
         offScreenImage.getGraphics().setColor(Color.WHITE);
         offScreenImage.getGraphics().fillRect(0, 0, offScreenImage.getWidth(), offScreenImage.getHeight());
-    }
-
-    @Override
-    public void setDisplayOn(final boolean pOn) {
     }
 
     @Override
@@ -157,13 +172,8 @@ public class BufferedUSBDisplay extends JLabel implements USBDisplay {
     }
 
     @Override
-    public Point getTouch() {
-        return touchPoint;
-    }
-
-    @Override
     public void paint(final BufferedImage pBufferedImage, final int x, final int y, final int pWidth, final int pHeight) {
-        if ( pBufferedImage!=offScreenImage ) {
+        if (pBufferedImage != offScreenImage) {
             offScreenImage.getRaster().setRect(x, y, pBufferedImage.getRaster());
         }
     }
@@ -186,12 +196,13 @@ public class BufferedUSBDisplay extends JLabel implements USBDisplay {
     }
 
     @Override
-    public boolean isPaused() {
-        return false;
+    public void setState(final State pState) {
+        state = pState;
     }
 
     @Override
-    public void setPaused(final boolean pPaused) {
+    public State getState() {
+        return state;
     }
 
     @Override

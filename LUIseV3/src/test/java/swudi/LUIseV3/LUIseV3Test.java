@@ -19,11 +19,11 @@ package swudi.LUIseV3;
 import com.ftdi.FTD2XXException;
 import com.ftdi.FTDevice;
 import swudi.device.TransferStatistics;
+import swudi.device.USBDisplay.State;
 import swudi.swing.SwUDiWindow;
 import swudi.swing.TestPanel;
 import swudi.swing.plaf.BlackAndWhiteTheme;
 
-import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JFrame;
@@ -41,6 +41,7 @@ import java.awt.BorderLayout;
 import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -55,7 +56,9 @@ public class LUIseV3Test {
         MetalLookAndFeel.setCurrentTheme(new BlackAndWhiteTheme());
 
         JFrame tFrame = new JFrame("LUIseV3Test");
-        final JPanel tDevicePanel = new JPanel(new GridLayout(0,1));
+        tFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+
+        final JPanel tDevicePanel = new JPanel(new GridLayout(0, 1));
         final JButton tButton = new JButton("Exit");
         tButton.addActionListener(new ActionListener() {
             @Override
@@ -76,6 +79,8 @@ public class LUIseV3Test {
         for (FTDevice tDevice : tDevices) {
             if ("LCD-USB-Interface V3".equals(tDevice.getDevDescription())) {
                 try {
+                    Thread.sleep(100);
+                    System.out.println(tDevice.getDevSerialNumber());
                     final LUIseV3USBDisplay tDisplay = startDevice(tDevice);
                     final JToggleButton tDeviceButton = new JToggleButton("LUIseV3 " + tDevice.getDevSerialNumber());
                     tDeviceButton.setSelected(true);
@@ -85,7 +90,7 @@ public class LUIseV3Test {
                             tDeviceButton.addActionListener(new ActionListener() {
                                 @Override
                                 public void actionPerformed(final ActionEvent e) {
-                                    tDisplay.setPaused(!tDeviceButton.isSelected());
+                                    tDisplay.setState(tDeviceButton.isSelected() ? State.ON : State.OFF);
                                 }
                             });
                         }
@@ -114,18 +119,8 @@ public class LUIseV3Test {
 
         JPanel tPanel = new JPanel(new GridLayout(0, 2));
 
-        final JLabel tMouseLabel = new JLabel("mouse");
         final JLabel tPaintLabel = new JLabel("paint");
 
-        final JSlider tMouseRefreshRateSlider = new JSlider(1, 100, tSwUDiWindow.getMouseRefreshRate());
-        tMouseRefreshRateSlider.setPaintLabels(true);
-        tMouseRefreshRateSlider.addChangeListener(new ChangeListener() {
-            @Override
-            public void stateChanged(final ChangeEvent e) {
-                tMouseLabel.setText("mouse " + tMouseRefreshRateSlider.getValue());
-                tSwUDiWindow.setMouseRefreshRate(tMouseRefreshRateSlider.getValue());
-            }
-        });
         final JSlider tPaintRateSlider = new JSlider(1, 100, tSwUDiWindow.getPaintRate());
         tPaintRateSlider.setPaintLabels(true);
         tPaintRateSlider.addChangeListener(new ChangeListener() {
@@ -136,8 +131,6 @@ public class LUIseV3Test {
             }
         });
 
-        tPanel.add(tMouseLabel);
-        tPanel.add(tMouseRefreshRateSlider);
         tPanel.add(tPaintLabel);
         tPanel.add(tPaintRateSlider);
 
@@ -152,7 +145,7 @@ public class LUIseV3Test {
                 tBitMask += tOutput2.isSelected() ? 2 : 0;
                 tBitMask += tOutput3.isSelected() ? 4 : 0;
 
-                tDisplay.sendCommand("Outputs (" + tBitMask + ");");
+                tDisplay.setOutput(tBitMask);
             }
         };
         tOutput1.addActionListener(tOutputActionListener);
@@ -165,6 +158,16 @@ public class LUIseV3Test {
         tPanel.add(tOutput2);
         tPanel.add(new JLabel("output 3"));
         tPanel.add(tOutput3);
+        
+        JButton tPauseButton = new JButton("Pause");
+        tPauseButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(final ActionEvent e) {
+                tDisplay.setState(State.PAUSED);
+            }
+        });
+        tPanel.add(new JLabel());
+        tPanel.add(tPauseButton);
 
         TestPanel tTestPanel = new TestPanel();
 
@@ -191,5 +194,7 @@ public class LUIseV3Test {
         tSwUDiWindow.add(tInfoLabel, BorderLayout.SOUTH);
 
         tSwUDiWindow.setVisible(true);
+
+        return tDisplay;
     }
 }

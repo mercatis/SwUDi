@@ -29,10 +29,6 @@ public interface USBDeviceFrame {
 
     USBDisplay getUSBDisplay();
 
-    int getMouseRefreshRate();
-
-    void setMouseRefreshRate(int pMouseRefreshRate);
-
     int getPaintRate();
 
     void setPaintRate(int pPaintRate);

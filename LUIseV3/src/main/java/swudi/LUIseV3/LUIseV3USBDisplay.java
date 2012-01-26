@@ -26,6 +26,9 @@ import java.awt.Point;
 import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferByte;
 import java.nio.charset.Charset;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -41,16 +44,16 @@ import java.util.regex.Pattern;
 public class LUIseV3USBDisplay implements USBDisplay {
 
     // some often used commands
-    private static final Charset US_ASCII = Charset.forName("US-ASCII");
-    private static final byte[] TOUCH_COMMAND = "Touch?;".getBytes(US_ASCII);
+    protected static final Charset US_ASCII = Charset.forName("US-ASCII");
     private static final byte[] BITMAP_COMMAND_PREFIX = "Bitmap (0,".getBytes(US_ASCII);
     private static final byte[] BITMAP_COMMAND_POSTFIX = ");".getBytes(US_ASCII);
-    private static Pattern TOUCH_PATTERN = Pattern.compile("Touch: ([0-9]),([0-9]+),([0-9]+)");
     private static Pattern BACKLIGHT_PATTERN = Pattern.compile("Backlight: ([0-9]+),([0-9]+),([0-9]+)");
+    private static Pattern AUTOTOUCH_PATTERN = Pattern.compile("AutoTouch: ([0-9]),([0-9]+),([0-9]+)");
 
-    private FTDevice ftDevice;
 
-    private final TransferStatistics transferStatistics = new TransferStatistics();
+    protected FTDevice ftDevice;
+
+    protected final TransferStatistics transferStatistics = new TransferStatistics();
 
     /**
      * connection started
@@ -61,11 +64,51 @@ public class LUIseV3USBDisplay implements USBDisplay {
 
     private boolean inverted = false;
 
-    private boolean paused = false;
+    private State state = State.ON;
 
     private final byte[] bitmapData = new byte[11000];
 
     private int restoreBacklightValue = 100;
+
+    private TouchEventHandler touchEventHandler;
+
+    private final BlockingQueue<String> commandBuffer = new ArrayBlockingQueue<String>(10);
+
+    private final Thread readerThread = new Thread() {
+        @Override
+        public void run() {
+            while (true) {
+                try {
+                    String tCommand = readCommand();
+                    // check if it is a autotouch command
+                    if (tCommand.startsWith("AutoTouch:")) {
+                        handleTouchEvent(tCommand);
+                    } else {
+                        commandBuffer.offer(tCommand, 100, TimeUnit.MILLISECONDS);
+                    }
+                } catch (FTD2XXException ex) {
+                    ex.printStackTrace();
+                    try {
+                        Thread.sleep(1000);
+                    } catch (InterruptedException e) {
+                    }
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                    try {
+                        Thread.sleep(1000);
+                    } catch (InterruptedException e) {
+                    }
+                }
+            }
+        }
+    };
+
+    // the current touch position. a TouchEvent is fired, when the currentTouch changes
+    private Point currentTouch;
+
+    // store here the millis until touch events are ignored. -> e.g. when state goes from paused to on again...
+    private Long ignoreTouchEventsUntil;
+
 
     @Override
     public BufferedImage createOffScreenBuffer() {
@@ -78,9 +121,85 @@ public class LUIseV3USBDisplay implements USBDisplay {
 
     public LUIseV3USBDisplay(final FTDevice pFTDevice, final USBDisplayExceptionHandler<FTD2XXException> pExceptionHandler) throws FTD2XXException {
         ftDevice = pFTDevice;
+
         init();
 
         exceptionHandler = pExceptionHandler;
+
+        readerThread.start();
+    }
+
+    private void handleTouchEvent(final String pCommand) {
+        if (getState() != State.OFF) {
+            if (ignoreTouchEventsUntil != null) {
+                if (ignoreTouchEventsUntil > System.currentTimeMillis()) {
+                    return;
+                } else {
+                    ignoreTouchEventsUntil = null;
+                }
+            }
+
+            // screensaver
+            if (getState() == State.PAUSED) {
+                setState(State.ON);
+                return;
+            }
+
+            try {
+            Matcher tMatcher = AUTOTOUCH_PATTERN.matcher(pCommand);
+            tMatcher.find();
+            int tActive = Integer.parseInt((tMatcher.group(1)));
+            if (tActive == 0) {
+                setCurrentTouch(null);
+            } else {
+                setCurrentTouch(new Point(Integer.parseInt(tMatcher.group(2)),
+                        Integer.parseInt(tMatcher.group(3))));
+            }
+            } catch ( Exception ex ) {
+                System.err.println("cannot handle touch event " + pCommand);
+            }
+        }
+    }
+
+    protected String readReply() {
+        try {
+            return commandBuffer.poll(200, TimeUnit.MILLISECONDS);
+        } catch (InterruptedException e) {
+            return null;
+        }
+    }
+
+    private synchronized void setCurrentTouch(final Point pPoint) {
+        if (!((pPoint == null) ? (currentTouch == null) : pPoint.equals(currentTouch))) {
+            // if no equals, send MouseEvent...
+            currentTouch = pPoint;
+            if (touchEventHandler != null) {
+                touchEventHandler.onTouchEvent(currentTouch);
+            }
+        }
+    }
+
+    private String readCommand() throws FTD2XXException {
+        StringBuilder tResult = new StringBuilder();
+        int tReadByte;
+        int tReceivedCount = 0;
+        // todo read into a buffer would be good, however, we do not get a result, because ftdevice blocks (maybe it waits for the buffer to fill
+
+        while ((tReadByte = ftDevice.read()) >= 0) {
+            tReceivedCount++;
+            if ((char) tReadByte == ';') {
+                break;
+            }
+            tResult.append((char) tReadByte);
+        }
+        transferStatistics.addBytesReceived(tReceivedCount);
+        return tResult.toString();
+    }
+
+
+    @Override
+    public void setTouchEventHandler(final TouchEventHandler pTouchEventHandler) {
+        touchEventHandler = pTouchEventHandler;
     }
 
     public USBDisplayExceptionHandler getExceptionHandler() {
@@ -103,22 +222,28 @@ public class LUIseV3USBDisplay implements USBDisplay {
     private void init() throws FTD2XXException {
         connectStartedMillis = System.currentTimeMillis();
 
+        initFTDevice();
+
+        setScreenConfig(0, 2, 0);
+        setState(State.ON);
+        setOutput(0);
+
+        sendCommand("AutoSendTouch (1);");
+    }
+
+    private void initFTDevice() throws FTD2XXException {
         ftDevice.open();
         ftDevice.purgeBuffer(true, true);
 
+        ftDevice.setLatencyTimer((short) 3);
+        ftDevice.setTimeouts(Long.MAX_VALUE, 200);
+
         // typically we transfer one frame in one transaction and receive one touch in a transaction
         ftDevice.setUSBParameters(256, 10240);
-
-        setScreenConfig(0, 2, 0);
-        setDisplayOn(true);
     }
 
     public void clearScreen() {
         sendCommand("BitmapClear (0);BitmapClear (1);TextClear;");
-    }
-
-    public void setDisplayOn(final boolean pDisplayOn) {
-        sendCommand("DisplayOn (" + (pDisplayOn ? "1" : "0") + ");");
     }
 
     public void setContrast(int pContrast) {
@@ -129,7 +254,12 @@ public class LUIseV3USBDisplay implements USBDisplay {
     public synchronized int getContrast() {
         sendCommand("Contrast?;");
         final String tReply = readReply();
-        return Integer.parseInt(tReply.substring("Contrast ".length() + 1));
+        try {
+            return Integer.parseInt(tReply.substring("Contrast ".length() + 1));
+        } catch (Exception e) {
+            System.err.println("cannot handle command " + tReply);
+            return 50;
+        }
     }
 
     public void setInverted(final boolean pInverted) {
@@ -151,12 +281,14 @@ public class LUIseV3USBDisplay implements USBDisplay {
     }
 
     public void sendData(final byte pData[], final int pOffset, final int pLength) {
-        try {
-            transferStatistics.addBytesSent(pLength);
-            ftDevice.write(pData, pOffset, pLength);
-        } catch (FTD2XXException ex) {
-            handleException(ex);
-
+        while (true) {
+            try {
+                ftDevice.write(pData, pOffset, pLength);
+                transferStatistics.addBytesSent(pLength);
+                return;
+            } catch (FTD2XXException ex) {
+                handleException(ex);
+            }
         }
     }
 
@@ -165,7 +297,9 @@ public class LUIseV3USBDisplay implements USBDisplay {
             if (exceptionHandler != null) {
                 exceptionHandler.handleException(this, pEx);
             } else {
-                pEx.printStackTrace();
+                System.out.println("got " + pEx.getMessage() + " will reset device");
+
+                ftDevice.resetDevice();
             }
         } catch (Exception ex) {
             // we ignore exceptions from the exception handler...
@@ -181,64 +315,30 @@ public class LUIseV3USBDisplay implements USBDisplay {
         sendCommand("TouchCalib;");
     }
 
-    public synchronized Point getTouch() {
-        if (isPaused()) {
-            return null;
-        }
-
-        sendData(TOUCH_COMMAND);
-
-        String tResult = readReply();
-        // fast check if we need to parse
-        if (tResult.startsWith("Touch: 1")) {
-            Matcher tMatcher = TOUCH_PATTERN.matcher(tResult);
-            tMatcher.find();
-            return new Point(Integer.parseInt(tMatcher.group(2)),
-                    Integer.parseInt(tMatcher.group(3)));
-        } else {
-            return null;
-        }
-    }
-
     @Override
-    public boolean isPaused() {
-        return paused;
-    }
-
-    @Override
-    public void setPaused(final boolean pPaused) {
-        paused = pPaused;
-
-        if (paused) {
-            restoreBacklightValue = getBacklight();
-            setBacklightWithoutStore(0);
-            sendCommand("DisplayOn (0);");
-        } else {
-            setBacklightWithoutStore(restoreBacklightValue);
-            sendCommand("DisplayOn (1);");
-        }
-    }
-
-    private String readReply() {
-        try {
-            StringBuilder tResult = new StringBuilder();
-            int tReadByte;
-            int tReceivedCount = 0;
-            // todo read into a buffer would be good, however, we do not get a result, because ftdevice blocks (maybe it waits for the buffer to fill
-
-            while ((tReadByte = ftDevice.read()) >= 0) {
-                tReceivedCount++;
-                if ((char) tReadByte == ';') {
+    public void setState(final State pState) {
+        if (state != pState) {
+            switch (pState) {
+                case ON:
+                    setBacklightWithoutStore(restoreBacklightValue);
+                    sendCommand("DisplayOn (1);");
+                    // ignore touch events for some time
+                    ignoreTouchEventsUntil = System.currentTimeMillis() + 500;
                     break;
-                }
-                tResult.append((char) tReadByte);
+                case OFF:
+                case PAUSED:
+                    restoreBacklightValue = getBacklight();
+                    setBacklightWithoutStore(0);
+                    sendCommand("DisplayOn (0);");
+                    break;
             }
-            transferStatistics.addBytesReceived(tReceivedCount);
-            return tResult.toString();
-        } catch (FTD2XXException ex) {
-            handleException(ex);
-            return null;
+            state = pState;
         }
+    }
+
+    @Override
+    public State getState() {
+        return state;
     }
 
     /**
@@ -324,7 +424,7 @@ public class LUIseV3USBDisplay implements USBDisplay {
     }
 
     public void paintClip(final BufferedImage pBufferedImage, final int pX, final int pY, final int pWidth, final int pHeight) {
-        if (isPaused()) {
+        if (getState() != State.ON) {
             return;
         }
         // we support only byte aligned clips
@@ -395,11 +495,17 @@ public class LUIseV3USBDisplay implements USBDisplay {
 
     @Override
     public synchronized int getBacklight() {
+        // currently not supported by every device
         sendCommand("Backlight?;");
         final String tReply = readReply();
-        final Matcher tMatcher = BACKLIGHT_PATTERN.matcher(tReply);
-        tMatcher.find();
-        return Integer.parseInt(tMatcher.group(1));
+        try {
+            final Matcher tMatcher = BACKLIGHT_PATTERN.matcher(tReply);
+            tMatcher.find();
+            return Integer.parseInt(tMatcher.group(1));
+        } catch (Exception e) {
+            System.err.println("cannot handle command " + tReply);
+            return 100;
+        }
     }
 
     public void reset() {
