@@ -14,6 +14,8 @@ import java.util.regex.Pattern;
 /**
  * Created: 26.01.12   by: Armin Haaf
  *
+ * This uses the autotouch feature of newer firmwares >= 3.0.3.2
+ *
  * @author Armin Haaf
  */
 public class AutoTouchLUIseV3USBDisplay extends AbstractLUIseV3USBDisplay {
