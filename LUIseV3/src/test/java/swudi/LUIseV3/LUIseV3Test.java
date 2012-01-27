@@ -41,7 +41,6 @@ import java.awt.BorderLayout;
 import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.util.Collections;
 import java.util.List;
 
 /**
@@ -79,9 +78,8 @@ public class LUIseV3Test {
         for (FTDevice tDevice : tDevices) {
             if ("LCD-USB-Interface V3".equals(tDevice.getDevDescription())) {
                 try {
-                    Thread.sleep(100);
                     System.out.println(tDevice.getDevSerialNumber());
-                    final LUIseV3USBDisplay tDisplay = startDevice(tDevice);
+                    final AbstractLUIseV3USBDisplay tDisplay = startDevice(tDevice);
                     final JToggleButton tDeviceButton = new JToggleButton("LUIseV3 " + tDevice.getDevSerialNumber());
                     tDeviceButton.setSelected(true);
                     SwingUtilities.invokeLater(new Runnable() {
@@ -109,8 +107,13 @@ public class LUIseV3Test {
         tFrame.setVisible(true);
     }
 
-    private static LUIseV3USBDisplay startDevice(final FTDevice tDevice) throws FTD2XXException {
-        final LUIseV3USBDisplay tDisplay = new LUIseV3USBDisplay(tDevice);
+    private static boolean isAutoTouchSupported() {
+        String osName = System.getProperty("os.name");
+        return osName.startsWith("Linux");
+    }
+
+    private static AbstractLUIseV3USBDisplay startDevice(final FTDevice tDevice) throws FTD2XXException {
+        final AbstractLUIseV3USBDisplay tDisplay = isAutoTouchSupported() ? new AutoTouchLUIseV3USBDisplay(tDevice) : new PollingLUIseV3USBDisplay(tDevice);
         final TransferStatistics tTransferStatistics = tDisplay.getTransferStatistics();
 
         // both have problems with menu
@@ -118,6 +121,23 @@ public class LUIseV3Test {
         tSwUDiWindow.setLocation(-10000, -10000);
 
         JPanel tPanel = new JPanel(new GridLayout(0, 2));
+
+        if (tDisplay instanceof PollingLUIseV3USBDisplay) {
+            final PollingLUIseV3USBDisplay tPollingLUIseV3USBDisplay = (PollingLUIseV3USBDisplay) tDisplay;
+            final JLabel tMouseLabel = new JLabel("mouse");
+
+            final JSlider tMouseRefreshRateSlider = new JSlider(1, 100, tPollingLUIseV3USBDisplay.getMouseRefreshRate());
+            tMouseRefreshRateSlider.setPaintLabels(true);
+            tMouseRefreshRateSlider.addChangeListener(new ChangeListener() {
+                @Override
+                public void stateChanged(final ChangeEvent e) {
+                    tMouseLabel.setText("mouse " + tMouseRefreshRateSlider.getValue());
+                    tPollingLUIseV3USBDisplay.setMouseRefreshRate(tMouseRefreshRateSlider.getValue());
+                }
+            });
+            tPanel.add(tMouseLabel);
+            tPanel.add(tMouseRefreshRateSlider);
+        }
 
         final JLabel tPaintLabel = new JLabel("paint");
 
@@ -158,7 +178,7 @@ public class LUIseV3Test {
         tPanel.add(tOutput2);
         tPanel.add(new JLabel("output 3"));
         tPanel.add(tOutput3);
-        
+
         JButton tPauseButton = new JButton("Pause");
         tPauseButton.addActionListener(new ActionListener() {
             @Override
