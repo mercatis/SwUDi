@@ -57,6 +57,8 @@ public interface USBDisplay {
 
     public void reset();
 
+    public boolean forceRepaint();
+
     void setState(State pState);
 
     State getState();

@@ -74,6 +74,8 @@ public abstract class AbstractLUIseV3USBDisplay implements USBDisplay {
     // store here the millis until touch events are ignored. -> e.g. when state goes from paused to on again...
     protected Long ignoreTouchEventsUntil;
 
+    private boolean forceRepaint;
+
     @Override
     public BufferedImage createOffScreenBuffer() {
         return new BufferedImage(320, 240, BufferedImage.TYPE_BYTE_BINARY);
@@ -125,7 +127,7 @@ public abstract class AbstractLUIseV3USBDisplay implements USBDisplay {
         return pString.getBytes(US_ASCII);
     }
 
-    private void init() throws FTD2XXException {
+    protected void init() throws FTD2XXException {
         connectStartedMillis = System.currentTimeMillis();
 
         initFTDevice();
@@ -133,15 +135,11 @@ public abstract class AbstractLUIseV3USBDisplay implements USBDisplay {
         setScreenConfig(0, 2, 0);
         setState(State.ON);
         setOutput(0);
+
+        forceRepaint = true;
     }
 
     private void initFTDevice() throws FTD2XXException {
-        ftDevice.open();
-        try {
-            Thread.sleep(100);
-        } catch (InterruptedException e) {
-        }
-
         ftDevice.purgeBuffer(true, true);
 
         ftDevice.setLatencyTimer((short) 3);
@@ -238,14 +236,35 @@ public abstract class AbstractLUIseV3USBDisplay implements USBDisplay {
         }
     }
 
+    protected void justSleep(long pMillis) {
+        try {
+            Thread.sleep(pMillis);
+        } catch (InterruptedException e) {
+        }
+    }
+
+
     protected void handleException(final FTD2XXException pEx) {
         try {
             if (exceptionHandler != null) {
                 exceptionHandler.handleException(this, pEx);
             } else {
-                System.out.println("got " + pEx.getMessage() + " will reset device");
+                // a simple reconnect handling
+                System.err.println("got " + pEx.getMessage() + " will try reconnect");
 
-                ftDevice.resetDevice();
+                close();
+                // sleep some time, to avoid to much load
+                justSleep(1000);
+                try {
+                    // try to get ftdevice
+                    FTDevice tFTDevice = FTDevice.openDeviceBySerialNumber(ftDevice.getDevSerialNumber());
+                    ftDevice = tFTDevice;
+                    // we need to wait some time, before device is resonsible again
+                    justSleep(3000);
+                    init();
+                } catch (FTD2XXException e) {
+                    ftDevice.resetDevice();
+                }
             }
         } catch (Exception ex) {
             // we ignore exceptions from the exception handler...
@@ -270,6 +289,7 @@ public abstract class AbstractLUIseV3USBDisplay implements USBDisplay {
                     sendCommand("DisplayOn (1);");
                     // ignore touch events for some time
                     ignoreTouchEventsUntil = System.currentTimeMillis() + 500;
+                    forceRepaint = true;
                     break;
                 case OFF:
                 case PAUSED:
@@ -289,58 +309,38 @@ public abstract class AbstractLUIseV3USBDisplay implements USBDisplay {
     }
 
     @Override
-    public void paint(final BufferedImage pBufferedImage, final int pX, final int pY, final int pWidth, final int pHeight) {
-        paintClip(pBufferedImage, pX, pY, pWidth, pHeight);
+    public boolean forceRepaint() {
+        return forceRepaint;
     }
 
-    public void paintFullScreen(final BufferedImage pBufferedImage) {
-        // try to reduce garbage creation -> it would be good, if we can store the data of a bufferedimage in a byte[], instead of copy one...
-
-        // currently we only support to transfer the whole screen
-        int x = 0;
-        int y = 0;
-        int width = pBufferedImage.getWidth();
-        int height = pBufferedImage.getHeight();
-
-
-        final byte[] tCommandPrefixData = getBytes("Bitmap (0," + x + "," + y + "," + width + "," + height + ",#");
-        final byte[] tCommandPostfixData = getBytes(");");
-
-        final DataBufferByte tImageBuffer = (DataBufferByte) pBufferedImage.getRaster().getDataBuffer();
-        final byte[] tBuffer = tImageBuffer.getData();
-        final int BMPDataLength = tBuffer.length;
-
-        final int tSize = tCommandPrefixData.length + 4 + tBuffer.length + tCommandPostfixData.length;
-        final byte[] tData = new byte[tSize];
-
-        int tDestPos = 0;
-
-        System.arraycopy(tCommandPrefixData, 0, tData, tDestPos, tCommandPrefixData.length);
-        tDestPos += tCommandPrefixData.length;
-
-        tData[tDestPos++] = (byte) (BMPDataLength >> 24);
-        tData[tDestPos++] = (byte) (BMPDataLength >> 16);
-        tData[tDestPos++] = (byte) (BMPDataLength >> 8);
-        tData[tDestPos++] = (byte) BMPDataLength;
-
-        System.arraycopy(tBuffer, 0, tData, tDestPos, tBuffer.length);
-        tDestPos += tBuffer.length;
-
-        System.arraycopy(tCommandPostfixData, 0, tData, tDestPos, tCommandPostfixData.length);
-        tDestPos += tCommandPostfixData.length;
-
-        sendData(tData);
+    @Override
+    public void paint(final BufferedImage pBufferedImage, final int pX, final int pY, final int pWidth, final int pHeight) {
+        paintClip(pBufferedImage, pX, pY, pWidth, pHeight);
     }
 
     public void paintClip(final BufferedImage pBufferedImage, final int pX, final int pY, final int pWidth, final int pHeight) {
         if (getState() != State.ON) {
             return;
         }
-        // we support only byte aligned clips
-        final int x = pX & ~7;
-        final int y = pY & ~7;
-        final int width = ((pX + pWidth + 7) & ~7) - x;
-        final int height = ((pY + pHeight + 7) & ~7) - y;
+
+        final int x;
+        final int y;
+        final int width;
+        final int height;
+
+        if (forceRepaint) {
+            forceRepaint = false;
+            x = 0;
+            y = 0;
+            width = pBufferedImage.getWidth();
+            height = pBufferedImage.getHeight();
+        } else {
+            // we support only byte aligned clips
+            x = pX & ~7;
+            y = pY & ~7;
+            width = ((pX + pWidth + 7) & ~7) - x;
+           height = ((pY + pHeight + 7) & ~7) - y;
+        }
 
         final byte[] tCommandInfoData = getBytes(x + "," + y + "," + width + "," + height + ",#");
 

@@ -208,4 +208,9 @@ public class BufferedUSBDisplay extends JLabel implements USBDisplay {
     @Override
     public void setOutput(final int pBitMask) {
     }
+
+    @Override
+    public boolean forceRepaint() {
+        return false;
+    }
 }

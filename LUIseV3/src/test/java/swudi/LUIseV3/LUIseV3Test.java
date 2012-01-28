@@ -79,6 +79,7 @@ public class LUIseV3Test {
             if ("LCD-USB-Interface V3".equals(tDevice.getDevDescription())) {
                 try {
                     System.out.println(tDevice.getDevSerialNumber());
+                    tDevice.open();
                     final AbstractLUIseV3USBDisplay tDisplay = startDevice(tDevice);
                     final JToggleButton tDeviceButton = new JToggleButton("LUIseV3 " + tDevice.getDevSerialNumber());
                     tDeviceButton.setSelected(true);

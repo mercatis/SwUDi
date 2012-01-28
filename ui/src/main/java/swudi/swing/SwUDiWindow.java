@@ -77,7 +77,7 @@ public class SwUDiWindow extends JWindow implements USBDeviceFrame {
             public void actionPerformed(final ActionEvent e) {
                 // TODO mouse pointer painting did not work
 
-                if (REPAINT_MANAGER.isDirty(SwUDiWindow.this) || (paintMousePointer && !mouse.getPosition().equals(lastPaintedMousePosition))) {
+                if (REPAINT_MANAGER.isDirty(SwUDiWindow.this) || (paintMousePointer && !mouse.getPosition().equals(lastPaintedMousePosition)) || usbDisplay.forceRepaint() ) {
                     if (paintMousePointer) {
                         // use xor it before and after to temporarily draw the mouse, however it did not work...
                         getGraphics().setXORMode(Color.WHITE);

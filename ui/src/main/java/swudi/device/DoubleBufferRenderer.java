@@ -51,8 +51,6 @@ public class DoubleBufferRenderer implements DisplayRenderer {
 
     private final ExecutorService rendererThread = Executors.newSingleThreadExecutor();
 
-    private boolean paused;
-
     public DoubleBufferRenderer(final USBDisplay pUsbDisplay) {
         offScreenImage = pUsbDisplay.createOffScreenBuffer();
         usbDisplay = pUsbDisplay;
@@ -153,18 +151,12 @@ public class DoubleBufferRenderer implements DisplayRenderer {
 
     private void renderDirtyRegion(final List<Rectangle> pDirtyRegions) {
         try {
-            if (usbDisplay.getState()!= State.ON) {
-                paused = true;
-                return;
-            }
-
             // check if render thread has done, if not we drop a frame
             if (!rendering.getAndSet(true)) {
 
                 final Rectangle tDirtyRegion;
-                if (paused) {
+                if (usbDisplay.forceRepaint()) {
                     tDirtyRegion = new Rectangle(0, 0, offScreenImage.getWidth(), offScreenImage.getHeight());
-                    paused = false;
                 } else {
                     tDirtyRegion = calcDiffRectangle(offScreenImage, displayImage);
                 }

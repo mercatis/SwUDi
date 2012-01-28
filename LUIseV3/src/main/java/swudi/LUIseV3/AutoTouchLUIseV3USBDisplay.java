@@ -42,6 +42,11 @@ public class AutoTouchLUIseV3USBDisplay extends AbstractLUIseV3USBDisplay {
 
         deviceReader = new DeviceReader();
         deviceReader.start();
+    }
+
+    @Override
+    protected void init() throws FTD2XXException {
+        super.init();
 
         sendCommand("AutoSendTouch (1);");
     }
@@ -113,13 +118,6 @@ public class AutoTouchLUIseV3USBDisplay extends AbstractLUIseV3USBDisplay {
                     ex.printStackTrace();
                     justSleep(1000);
                 }
-            }
-        }
-
-        private void justSleep(long pMillis) {
-            try {
-                Thread.sleep(pMillis);
-            } catch (InterruptedException e) {
             }
         }
 
