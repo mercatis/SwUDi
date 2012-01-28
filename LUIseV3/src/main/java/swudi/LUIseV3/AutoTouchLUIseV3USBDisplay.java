@@ -66,7 +66,7 @@ public class AutoTouchLUIseV3USBDisplay extends AbstractLUIseV3USBDisplay {
             // this is strange
             // TODO there is a strange windows behaviour. It seems not possible to read and write at the same time!!
             // so on windows use PollingLUIseV3USBDisplay
-            // todo read into a buffer would be good, however, we do not get a result, because ftdevice blocks (maybe it waits for the buffer to fill
+            // todo read into a buffer would be good, however, we do not get a result, because ftdevice blocks (it waits for the buffer to fill)
             final StringBuilder tReadBuffer = new StringBuilder();
 
             int tReadByte;

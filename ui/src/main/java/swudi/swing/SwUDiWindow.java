@@ -109,6 +109,7 @@ public class SwUDiWindow extends JWindow implements USBDeviceFrame {
         super.setMaximumSize(tScreenSize);
         super.setPreferredSize(tScreenSize);
         super.setMinimumSize(tScreenSize);
+        setLocation(-10000, -10000);
 
         usbDisplay.clearScreen();
 

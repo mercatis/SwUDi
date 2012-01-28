@@ -118,7 +118,6 @@ public class LUIseV3Test {
 
         // both have problems with menu
         final SwUDiWindow tSwUDiWindow = new SwUDiWindow(tDisplay);
-        tSwUDiWindow.setLocation(-10000, -10000);
 
         JPanel tPanel = new JPanel(new GridLayout(0, 2));
 
