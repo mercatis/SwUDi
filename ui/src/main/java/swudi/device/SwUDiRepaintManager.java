@@ -17,7 +17,6 @@
 package swudi.device;
 
 import swudi.swing.SwUDiWindow;
-import swudi.swing.USBDeviceFrame;
 
 import javax.swing.JComponent;
 import javax.swing.RepaintManager;
@@ -40,7 +39,20 @@ import java.util.Map;
  */
 public class SwUDiRepaintManager extends RepaintManager {
 
-    private final Map<Component, Boolean> dirtySwUDiFrames = Collections.synchronizedMap(new HashMap<Component, Boolean>());
+    private final Map<SwUDiWindow, Boolean> dirtySwUDiFrames = Collections.synchronizedMap(new HashMap<SwUDiWindow, Boolean>());
+
+    @Override
+    public void addInvalidComponent(final JComponent c) {
+        addDirtySwUDiComponent(c);
+        super.addInvalidComponent(c);
+    }
+
+    @Override
+    public void paintDirtyRegions() {
+        super.paintDirtyRegions();
+
+        // it would be possible to render the SwUDiWindow on demand here. However Swing renders much more frame, than needed (and is possible) for a usb device
+    }
 
     @Override
     public void addDirtyRegion(final JComponent c, final int x, final int y, final int w, final int h) {
@@ -51,7 +63,7 @@ public class SwUDiRepaintManager extends RepaintManager {
     @Override
     public void addDirtyRegion(final Window window, final int x, final int y, final int w, final int h) {
         if (window instanceof SwUDiWindow) {
-            dirtySwUDiFrames.put(window, Boolean.TRUE);
+            dirtySwUDiFrames.put((SwUDiWindow) window, Boolean.TRUE);
         }
         super.addDirtyRegion(window, x, y, w, h);
     }
@@ -65,7 +77,7 @@ public class SwUDiRepaintManager extends RepaintManager {
     private void addDirtySwUDiComponent(final JComponent c) {
         final Component tRoot = SwingUtilities.getRoot(c);
         if (tRoot instanceof SwUDiWindow) {
-            dirtySwUDiFrames.put(tRoot, Boolean.TRUE);
+            dirtySwUDiFrames.put((SwUDiWindow) tRoot, Boolean.TRUE);
         }
     }
 
