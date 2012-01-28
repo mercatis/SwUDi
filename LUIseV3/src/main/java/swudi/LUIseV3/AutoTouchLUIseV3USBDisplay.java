@@ -36,10 +36,19 @@ public class AutoTouchLUIseV3USBDisplay extends AbstractLUIseV3USBDisplay {
         super(pFTDevice, pExceptionHandler);
 
 
+        if ( !isAutoTouchSupported() ) {
+            throw new IllegalArgumentException("auto touch not supported on this plattform");
+        }
+
         deviceReader = new DeviceReader();
         deviceReader.start();
 
         sendCommand("AutoSendTouch (1);");
+    }
+
+    public static boolean isAutoTouchSupported() {
+        String osName = System.getProperty("os.name");
+        return osName.startsWith("Linux");
     }
 
     @Override
