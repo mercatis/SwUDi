@@ -58,6 +58,11 @@ libusb requires write access to USB device nodes.
 </pre>
             -> either fix your udev scripts, or just give yourself write access: "chmod 666 /dev/bus/usb/002/019"
 
+            for fixing your udev do
+            <pre>
+            echo 'SUBSYSTEMS=="usb", ATTRS{idVendor}=="0403", ATTRS{idProduct}=="6001",GROUP="users", MODE="0666"' > /etc/udev/rules.d/99-LUIseV3.rules
+            </pre>
+            as root
         </li>
 
         <li>ftd2xx did not find a device, eg:
@@ -69,7 +74,7 @@ no device found
 </pre>
 
             the problem maybe is that linux loads some modules, if you plugin a ftdi-device -> ftdi_sio, usbserial.
-            You have to remove them when using ftd2xx -> "rmmod ftdi_sio usbserial" as root
+            You have to remove them when using ftd2xx -> "rmmod ftdi_sio usbserial" as root, or fixing your udev...
 
         </li>
 
@@ -78,8 +83,10 @@ no device found
 Exception in thread "main" com.ftdi.FTD2XXException: D2XX error, ftStatus:INVALID_HANDLE
         </pre>
             I'm not sure why, just restart the application...
+            -> this is a problem of 64-bit platforms as JavaFTD2XX did not handle them correctly -> i patched it to support 64bit also -> see
+            <a href="https://github.com/arminhaaf/JavaFTD2XX">JavaFTD2XX fork</a>
         </li>
-        <ul>
+        </ul>
 
 </body>
 </html>
