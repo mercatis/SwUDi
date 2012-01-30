@@ -95,6 +95,8 @@ public class PollingLUIseV3USBDisplay extends AbstractLUIseV3USBDisplay {
 
     @Override
     public void setState(final State pState) {
+        super.setState(pState);
+
         if (getState() == State.OFF && mouseRefreshTimer != null) {
             mouseRefreshTimer.cancel();
             mouseRefreshTimer = null;
@@ -103,8 +105,6 @@ public class PollingLUIseV3USBDisplay extends AbstractLUIseV3USBDisplay {
         if (getState() != State.OFF && mouseRefreshTimer == null) {
             startMouseRefreshTimer();
         }
-
-        super.setState(pState);
     }
 
     private void pollTouch() {
