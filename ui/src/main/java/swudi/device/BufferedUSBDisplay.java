@@ -206,7 +206,7 @@ public class BufferedUSBDisplay extends JLabel implements USBDisplay {
     }
 
     @Override
-    public void setOutput(final int pBitMask) {
+    public void setOutput(final int pOutput, final int pPercent) {
     }
 
     @Override

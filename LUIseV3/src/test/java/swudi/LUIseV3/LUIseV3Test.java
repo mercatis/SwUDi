@@ -149,30 +149,7 @@ public class LUIseV3Test {
         tPanel.add(tPaintLabel);
         tPanel.add(tPaintRateSlider);
 
-        final JCheckBox tOutput1 = new JCheckBox();
-        final JCheckBox tOutput2 = new JCheckBox();
-        final JCheckBox tOutput3 = new JCheckBox();
-        ActionListener tOutputActionListener = new ActionListener() {
-            @Override
-            public void actionPerformed(final ActionEvent e) {
-                int tBitMask = 0;
-                tBitMask += tOutput1.isSelected() ? 1 : 0;
-                tBitMask += tOutput2.isSelected() ? 2 : 0;
-                tBitMask += tOutput3.isSelected() ? 4 : 0;
-
-                tDisplay.setOutput(tBitMask);
-            }
-        };
-        tOutput1.addActionListener(tOutputActionListener);
-        tOutput2.addActionListener(tOutputActionListener);
-        tOutput3.addActionListener(tOutputActionListener);
-
-        tPanel.add(new JLabel("output 1"));
-        tPanel.add(tOutput1);
-        tPanel.add(new JLabel("output 2"));
-        tPanel.add(tOutput2);
-        tPanel.add(new JLabel("output 3"));
-        tPanel.add(tOutput3);
+        addOutputSliders(tDisplay, tPanel);
 
         JButton tPauseButton = new JButton("Pause");
         tPauseButton.addActionListener(new ActionListener() {
@@ -211,5 +188,52 @@ public class LUIseV3Test {
         tSwUDiWindow.setVisible(true);
 
         return tDisplay;
+    }
+
+    private static void addOutputSwitches(final AbstractLUIseV3USBDisplay pDisplay, final JPanel pPanel) {
+        final JCheckBox tOutput1 = new JCheckBox();
+        final JCheckBox tOutput2 = new JCheckBox();
+        final JCheckBox tOutput3 = new JCheckBox();
+        ActionListener tOutputActionListener = new ActionListener() {
+            @Override
+            public void actionPerformed(final ActionEvent e) {
+                int tBitMask = 0;
+                tBitMask += tOutput1.isSelected() ? 1 : 0;
+                tBitMask += tOutput2.isSelected() ? 2 : 0;
+                tBitMask += tOutput3.isSelected() ? 4 : 0;
+
+                pDisplay.setOutput(tBitMask);
+            }
+        };
+        tOutput1.addActionListener(tOutputActionListener);
+        tOutput2.addActionListener(tOutputActionListener);
+        tOutput3.addActionListener(tOutputActionListener);
+
+        pPanel.add(new JLabel("output 1"));
+        pPanel.add(tOutput1);
+        pPanel.add(new JLabel("output 2"));
+        pPanel.add(tOutput2);
+        pPanel.add(new JLabel("output 3"));
+        pPanel.add(tOutput3);
+    }
+
+    private static void addOutputSliders(final AbstractLUIseV3USBDisplay pDisplay, final JPanel pPanel) {
+        for (int i = 1; i <= 3; i++) {
+            final int tOutputNumber = i;
+            final JSlider tOutput = new JSlider();
+            final JLabel tOutputLabel = new JLabel("output " + tOutputNumber);
+
+            tOutput.setPaintLabels(true);
+            tOutput.addChangeListener(new ChangeListener() {
+                @Override
+                public void stateChanged(final ChangeEvent e) {
+                    tOutputLabel.setText("output " + tOutputNumber + ":" + tOutput.getValue());
+
+                    pDisplay.setOutput(tOutputNumber, tOutput.getValue());
+                }
+            });
+            pPanel.add(tOutputLabel);
+            pPanel.add(tOutput);
+        }
     }
 }

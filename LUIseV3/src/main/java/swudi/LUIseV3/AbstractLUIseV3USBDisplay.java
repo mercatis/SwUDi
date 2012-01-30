@@ -118,9 +118,13 @@ public abstract class AbstractLUIseV3USBDisplay implements USBDisplay {
         exceptionHandler = pExceptionHandler;
     }
 
-    @Override
     public void setOutput(int pBitMask) {
         sendCommand("Outputs (" + pBitMask + ");");
+    }
+
+    @Override
+    public void setOutput(int pLED, int pPercent) {
+        sendCommand("Output" + pLED + "DC (" + pPercent + ");");
     }
 
     private byte[] getBytes(String pString) {
@@ -161,7 +165,7 @@ public abstract class AbstractLUIseV3USBDisplay implements USBDisplay {
             }
 
             // screensaver
-            if (getState() == State.PAUSED ) {
+            if (getState() == State.PAUSED) {
                 setState(State.ON);
                 return;
             }
@@ -250,7 +254,7 @@ public abstract class AbstractLUIseV3USBDisplay implements USBDisplay {
                 exceptionHandler.handleException(this, pEx);
             } else {
                 // a simple reconnect handling
-                System.err.println("got " + pEx.getMessage() + " will try reconnect");
+                System.err.println("got " + pEx.getMessage() + " will try reconnect to " + ftDevice.getDevSerialNumber());
 
                 close();
                 // sleep some time, to avoid to much load
@@ -339,7 +343,7 @@ public abstract class AbstractLUIseV3USBDisplay implements USBDisplay {
             x = pX & ~7;
             y = pY & ~7;
             width = ((pX + pWidth + 7) & ~7) - x;
-           height = ((pY + pHeight + 7) & ~7) - y;
+            height = ((pY + pHeight + 7) & ~7) - y;
         }
 
         final byte[] tCommandInfoData = getBytes(x + "," + y + "," + width + "," + height + ",#");

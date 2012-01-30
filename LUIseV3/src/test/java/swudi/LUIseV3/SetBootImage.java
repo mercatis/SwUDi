@@ -74,7 +74,7 @@ public class SetBootImage {
         for (FTDevice tDevice : tDevices) {
             if ("LCD-USB-Interface V3".equals(tDevice.getDevDescription())) {
                 try {
-                    Thread.sleep(100);
+                    tDevice.open();
                     final JLabel tInfoLabel =   new JLabel("LUIseV3 " + tDevice.getDevSerialNumber());
                     tDevicePanel.add(tInfoLabel);
                     tFrame.pack();
@@ -92,11 +92,15 @@ public class SetBootImage {
     }
 
     private static AbstractLUIseV3USBDisplay startDevice(final FTDevice tDevice, final String pImagePath) throws FTD2XXException {
-        final AbstractLUIseV3USBDisplay tDisplay = new PollingLUIseV3USBDisplay(tDevice);
+        final AbstractLUIseV3USBDisplay tDisplay = new AutoTouchLUIseV3USBDisplay(tDevice);
 
         final SwUDiWindow tSwUDiWindow = new SwUDiWindow(tDisplay);
 
         tSwUDiWindow.add(new JLabel(new ImageIcon(pImagePath)));
+        tDisplay.setBacklight(100);
+
+        tSwUDiWindow.setVisible(true);
+
         new Thread(new Runnable() {
             @Override
             public void run() {
@@ -115,9 +119,6 @@ public class SetBootImage {
             }
         }).start();
 
-        tDisplay.setBacklight(100);
-
-        tSwUDiWindow.setVisible(true);
 
         return tDisplay;
     }

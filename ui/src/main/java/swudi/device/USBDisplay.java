@@ -63,7 +63,7 @@ public interface USBDisplay {
 
     State getState();
 
-    void setOutput(int pBitMask);
+    void setOutput(int pOutput, int pPercent);
     
     public interface TouchEventHandler {
         public void onTouchEvent(Point pTouchPoint);
