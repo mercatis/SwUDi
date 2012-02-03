@@ -136,8 +136,11 @@ public abstract class AbstractLUIseV3USBDisplay implements USBDisplay {
 
         initFTDevice();
 
+        // reset autosend to avoid problems with polling device
+        sendCommand("AutoSendTouch (0);");
+        sendCommand("DisplayOn (1);");
+
         setScreenConfig(0, 2, 0);
-        setState(State.ON);
         setOutput(0);
 
         forceRepaint = true;
