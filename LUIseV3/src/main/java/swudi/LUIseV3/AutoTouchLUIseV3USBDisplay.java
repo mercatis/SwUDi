@@ -2,6 +2,7 @@ package swudi.LUIseV3;
 
 import com.ftdi.FTD2XXException;
 import com.ftdi.FTDevice;
+import com.sun.jna.Platform;
 import swudi.device.USBDisplayExceptionHandler;
 
 import java.awt.Point;
@@ -28,17 +29,14 @@ public class AutoTouchLUIseV3USBDisplay extends AbstractLUIseV3USBDisplay {
 
     private int commandPollTimeout = 1000;
 
+    private int pollSleepMillis = 20;
+
     public AutoTouchLUIseV3USBDisplay(final FTDevice pFTDevice) throws FTD2XXException {
         this(pFTDevice, null);
     }
 
     public AutoTouchLUIseV3USBDisplay(final FTDevice pFTDevice, final USBDisplayExceptionHandler<FTD2XXException> pExceptionHandler) throws FTD2XXException {
         super(pFTDevice, pExceptionHandler);
-
-
-        if ( !isAutoTouchSupported() ) {
-            throw new IllegalArgumentException("auto touch not supported on this plattform");
-        }
 
         deviceReader = new DeviceReader();
         deviceReader.start();
@@ -49,11 +47,6 @@ public class AutoTouchLUIseV3USBDisplay extends AbstractLUIseV3USBDisplay {
         super.init();
 
         sendCommand("AutoSendTouch (1);");
-    }
-
-    public static boolean isAutoTouchSupported() {
-        String osName = System.getProperty("os.name");
-        return osName.startsWith("Linux");
     }
 
     @Override
@@ -85,6 +78,18 @@ public class AutoTouchLUIseV3USBDisplay extends AbstractLUIseV3USBDisplay {
 
             int tReadByte;
             int tReceivedCount = 0;
+
+            // THIS is a windows fix, because under windows fd2xx blocks a write, when read is waiting, so do a simple poll
+            if (Platform.isWindows()) {
+                while (ftDevice.getQueueStatus() < 10) {
+                    try {
+                        Thread.sleep(pollSleepMillis);
+                    } catch (InterruptedException e) {
+                        // ignore
+                    }
+                }
+            }
+
             while ((tReadByte = ftDevice.read()) >= 0) {
                 tReceivedCount++;
                 if ((char) tReadByte == ';') {

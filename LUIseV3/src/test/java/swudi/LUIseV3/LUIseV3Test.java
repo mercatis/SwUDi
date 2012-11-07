@@ -109,7 +109,7 @@ public class LUIseV3Test {
     }
 
     private static AbstractLUIseV3USBDisplay startDevice(final FTDevice tDevice) throws FTD2XXException {
-        final AbstractLUIseV3USBDisplay tDisplay = AutoTouchLUIseV3USBDisplay.isAutoTouchSupported() ? new AutoTouchLUIseV3USBDisplay(tDevice) : new PollingLUIseV3USBDisplay(tDevice);
+        final AbstractLUIseV3USBDisplay tDisplay = new AutoTouchLUIseV3USBDisplay(tDevice);
         final TransferStatistics tTransferStatistics = tDisplay.getTransferStatistics();
 
         // both have problems with menu

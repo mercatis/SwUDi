@@ -8,7 +8,7 @@ import java.util.TimerTask;
 import java.util.regex.Pattern;
 
 /**
- * This is needed, because i cannot get the AutoTouch working on windows -> read did block write
+ * A polling approach...
  * Created: 26.01.12   by: Armin Haaf
  *
  * @author Armin Haaf
