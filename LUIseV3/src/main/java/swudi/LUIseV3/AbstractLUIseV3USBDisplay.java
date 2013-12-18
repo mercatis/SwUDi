@@ -23,6 +23,7 @@ import swudi.device.USBDisplay;
 import swudi.device.USBDisplayExceptionHandler;
 
 import java.awt.Point;
+import java.awt.datatransfer.DataFlavor;
 import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferByte;
 import java.nio.charset.Charset;
@@ -49,6 +50,8 @@ public abstract class AbstractLUIseV3USBDisplay implements USBDisplay {
 
     protected FTDevice ftDevice;
 
+    protected String ftDeviceSerialNumber;
+
     protected final TransferStatistics transferStatistics = new TransferStatistics();
 
     /**
@@ -61,6 +64,8 @@ public abstract class AbstractLUIseV3USBDisplay implements USBDisplay {
     private boolean inverted = false;
 
     private State state = State.ON;
+
+    private int[] leds = new int[3];
 
     private final byte[] bitmapData = new byte[11000];
 
@@ -89,6 +94,8 @@ public abstract class AbstractLUIseV3USBDisplay implements USBDisplay {
         ftDevice = pFTDevice;
 
         init();
+
+        ftDeviceSerialNumber = ftDevice.getDevSerialNumber();
 
         exceptionHandler = pExceptionHandler;
     }
@@ -124,6 +131,7 @@ public abstract class AbstractLUIseV3USBDisplay implements USBDisplay {
 
     @Override
     public void setOutput(int pLED, int pPercent) {
+        leds[pLED-1] = pPercent;
         sendCommand("Output" + pLED + "DC (" + pPercent + ");");
     }
 
@@ -138,10 +146,12 @@ public abstract class AbstractLUIseV3USBDisplay implements USBDisplay {
 
         // reset autosend to avoid problems with polling device
         sendCommand("AutoSendTouch (0);");
-        sendCommand("DisplayOn (1);");
 
-        setScreenConfig(0, 2, 0);
-        setOutput(0);
+        setState(state);
+        setInverted(inverted);
+        for (int i = 0; i < leds.length; i++) {
+            setOutput(i+1, leds[i]);
+        }
 
         forceRepaint = true;
     }
@@ -264,7 +274,7 @@ public abstract class AbstractLUIseV3USBDisplay implements USBDisplay {
                 justSleep(1000);
                 try {
                     // try to get ftdevice
-                    FTDevice tFTDevice = FTDevice.openDeviceBySerialNumber(ftDevice.getDevSerialNumber());
+                    FTDevice tFTDevice = FTDevice.openDeviceBySerialNumber(ftDeviceSerialNumber);
                     ftDevice = tFTDevice;
                     // we need to wait some time, before device is resonsible again
                     justSleep(3000);
